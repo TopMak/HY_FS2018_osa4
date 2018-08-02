@@ -29,7 +29,7 @@ const favoriteBlog = (blogs) => {
 
 const mostBlogs = (blogs) => {
 
-bloggerWithMost = blogs.reduce( (bloggersAndPosts, blog) =>{
+bloggerWithMostBlogs = blogs.reduce( (bloggersAndPosts, blog) =>{
 
   //Using filter, but doesn't return index...
   //let isBloggerOnList = bloggersAndPosts.filter( blogger => (blogger.author == blog.author) )
@@ -56,7 +56,34 @@ bloggerWithMost = blogs.reduce( (bloggersAndPosts, blog) =>{
 }, [])
 
 //returns the first blogger and blog count that has the highest blog count
-return bloggerWithMost.reduce( (max, x) => x.blogs > max.blogs ? x : max)
+return bloggerWithMostBlogs.reduce( (max, x) => x.blogs > max.blogs ? x : max)
+
+}
+
+const mostLikes = (blogs) => {
+  //similar approach as in mostBlogs, now with likes
+  bloggerMostLikes = blogs.reduce( (bloggersAndLikes, blog) =>{
+
+  let bloggerOnList = bloggersAndLikes.findIndex(blogger => blogger.author == blog.author)
+
+  if(bloggerOnList === -1){
+    //Index not found, add blogger to array
+    bloggersAndLikes.push({
+      "author" : blog.author,
+      "likes" : blog.likes
+    })
+  }
+  else {
+
+    bloggersAndLikes[bloggerOnList].likes += blog.likes
+
+  }
+
+  return bloggersAndLikes
+
+}, [])
+
+  return bloggerMostLikes.reduce( (max, x) => x.likes > max.likes ? x : max)
 
 }
 
@@ -64,5 +91,6 @@ module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
-  mostBlogs
+  mostBlogs,
+  mostLikes
 }

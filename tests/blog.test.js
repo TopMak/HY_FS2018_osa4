@@ -66,7 +66,7 @@ describe('total likes check', () => {
 
 })
 
-describe('total likes check', () => {
+describe('favourite blog check', () => {
 
   test('favourite blog', () => {
     expect(listHelper.favoriteBlog(blogs)).toEqual(

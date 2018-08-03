@@ -1,6 +1,9 @@
-const listHelper = require('../utils/list_helper')
+const supertest = require('supertest')
+const { app, server } = require('../index')
+const api = supertest(app)
+const Blog = require('../models/blog')
 
-const blogs = [
+const initBlogs = [
   {
     _id: "5a422a851b54a676234d17f7",
     title: "React patterns",
@@ -51,60 +54,44 @@ const blogs = [
   }
 ]
 
-describe('Individual blog tests', () => {
+  beforeAll(async () => {
+    await Blog.remove({})
 
-  test('dummy is called', () => {
-    //const blogs = []
-
-    const result = listHelper.dummy(blogs)
-    expect(result).toBe(1)
-  })
-
-  describe('total likes check', () => {
-
-    test('total like sum is correct', () => {
-      expect(listHelper.totalLikes(blogs)).toBe(36)
-    })
-
-  })
-
-  describe('favourite blog check', () => {
-
-    test('favourite blog', () => {
-      expect(listHelper.favoriteBlog(blogs)).toEqual(
-        {
-          title: "Canonical string reduction",
-          author: "Edsger W. Dijkstra",
-          likes: 12
-        }
-      )
-    })
-
-  })
-
-  describe('blogger with most blogs', () => {
-
-    test('blogger with most blogs ok', () => {
-      expect(listHelper.mostBlogs(blogs)).toEqual(
-        {
-          author: "Robert C. Martin",
-          blogs: 3
-        }
-      )
-    })
-
+    for (let blog of initBlogs) {
+      let blogObject = new Blog(blog)
+      await blogObject.save()
+    }
   })
 
 
-  describe('blogger with most likes', () => {
+describe('API tests', () => {
 
-    test('blogger with most likes ok', () => {
-      expect(listHelper.mostLikes(blogs)).toEqual(
-        {
-          author: "Edsger W. Dijkstra",
-          likes: 17
-        }
-      )
-    })
+  test('GET test - all blogs are returned', async () => {
+    const response = await api
+      .get('/api/blogs')
+
+    expect(response.body.length).toBe(initBlogs.length)
   })
+
+
+  test('blogs are returned as json', async () => {
+    await api
+      .get('/api/blogs')
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+  })
+
+
+test('returns 404 with error msg if wrong url ', async () => {
+  const response = await api
+    .get('/api/blogsss')
+    .expect(404)
+
+    expect(response.body). toEqual(
+      {
+        "error": "unknown endpoint"
+      })
+  })
+
+
 })

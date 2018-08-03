@@ -64,25 +64,25 @@ const mostLikes = (blogs) => {
   //similar approach as in mostBlogs, now with likes
   bloggerMostLikes = blogs.reduce( (bloggersAndLikes, blog) =>{
 
-  let bloggerOnList = bloggersAndLikes.findIndex(blogger => blogger.author == blog.author)
+    let bloggerOnList = bloggersAndLikes.findIndex(blogger => blogger.author == blog.author)
 
-  if(bloggerOnList === -1){
-    //Index not found, add blogger to array
-    bloggersAndLikes.push({
-      "author" : blog.author,
-      "likes" : blog.likes
-    })
-  }
-  else {
+    if(bloggerOnList === -1){
+      //Index not found, add blogger to array
+      bloggersAndLikes.push({
+        "author" : blog.author,
+        "likes" : blog.likes
+      })
+    }
+    else {
 
-    bloggersAndLikes[bloggerOnList].likes += blog.likes
+      bloggersAndLikes[bloggerOnList].likes += blog.likes
 
-  }
+    }
 
-  return bloggersAndLikes
+    return bloggersAndLikes
 
 }, [])
-
+  //returns the first blogger and like count that has the highest like count
   return bloggerMostLikes.reduce( (max, x) => x.likes > max.likes ? x : max)
 
 }

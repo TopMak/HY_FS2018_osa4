@@ -87,11 +87,56 @@ test('returns 404 with error msg if wrong url ', async () => {
     .get('/api/blogsss')
     .expect(404)
 
-    expect(response.body). toEqual(
+    expect(response.body).toEqual(
       {
         "error": "unknown endpoint"
       })
   })
 
 
-})
+  test('add blog post and check if it is returned ', async () => {
+
+     const newBlogPost = {
+       title: "Javascript Fatigue",
+       author: "Eric Clemmons",
+       url: "https://medium.com/@ericclemmons/javascript-fatigue-48d4011b6fc4",
+       likes: 0
+     }
+
+     await api
+       .post('/api/blogs')
+       .send(newBlogPost)
+       .expect(201)
+       .expect('Content-Type', /application\/json/)
+
+     //check if the new post is returned
+
+     const response = await api
+      .get('/api/blogs')
+
+      const cleanedBlog = response.body.map(blog => {
+
+      //Mongo adds, _id and __v --> remove those
+      ({_id, __v, ...cleanBlog} = blog)
+      return cleanBlog
+
+      })
+
+
+      expect(response.body.length).toBe(initBlogs.length + 1)
+      expect(cleanedBlog).toContainEqual(
+        {
+          title: "Javascript Fatigue",
+          author: "Eric Clemmons",
+          url: "https://medium.com/@ericclemmons/javascript-fatigue-48d4011b6fc4",
+          likes: 0
+        }
+      )
+  })
+
+  afterAll(() => {
+    server.close()
+  })
+
+
+}) //End of describe API tests

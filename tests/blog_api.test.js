@@ -137,11 +137,18 @@ test('returns 404 with error msg if wrong url ', async () => {
 
   test('missing likes property defaults to 0 likes ', async () => {
 
+    // const zeroLikesTestBlog = {
+    //   title: "ZeroLikes Test",
+    //   author: "Test God",
+    //   url: "127.0.0.1"
+    //   //missing likes
+    // }
+
     const zeroLikesTestBlog = {
       title: "ZeroLikes Test",
       author: "Test God",
-      url: "127.0.0.1"
-      //missing likes
+      url: "127.0.0.1",
+      likes: null
     }
 
     await api
@@ -172,6 +179,34 @@ test('returns 404 with error msg if wrong url ', async () => {
     )
 
   })
+
+
+  test('returns 400 if url or tittle is missing ', async () => {
+
+    const missingUrlBlog = {
+      title: "Missing Url Test",
+      author: "Test God",
+      likes: 100
+    }
+
+    const missingTittleBlog = {
+      author: "Test God",
+      url: "127.0.0.1",
+      likes: 100
+      //missing likes
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(missingTittleBlog)
+      .expect(400)
+
+    await api
+      .post('/api/blogs')
+      .send(missingUrlBlog)
+      .expect(400)
+
+    })
 
   afterAll(() => {
     server.close()

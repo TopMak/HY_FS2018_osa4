@@ -16,10 +16,23 @@ blogsRouter.get('/', (request, response) => {
 
 blogsRouter.post('/', (request, response) => {
 
-  //If likes property is missing, add and set zero
-  if(!request.body.hasOwnProperty("likes")){
-    console.log("likes is missing");
-    request.body.likes = 0
+  //When likes property is missing, add and set zero ---> Not the purpose of task?
+  // if(!request.body.hasOwnProperty("likes")){
+  //   console.log("likes is missing");
+  //   request.body.likes = 0
+  // }
+
+
+  if (request.body.likes === null) {
+      //console.log(request.body.likes);
+      request.body.likes = 0
+  }
+
+
+  //When url or tittle property is missing, return status 404
+  if( !request.body.hasOwnProperty("url") || !request.body.hasOwnProperty("title") ){
+    //console.log("missing url and/or title");
+    return response.status(400).end()
   }
 
 

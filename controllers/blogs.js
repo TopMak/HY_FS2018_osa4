@@ -15,6 +15,14 @@ blogsRouter.get('/', (request, response) => {
 })
 
 blogsRouter.post('/', (request, response) => {
+
+  //If likes property is missing, add and set zero
+  if(!request.body.hasOwnProperty("likes")){
+    console.log("likes is missing");
+    request.body.likes = 0
+  }
+
+
   const blog = new Blog(request.body)
 
   blog

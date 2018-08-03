@@ -134,6 +134,45 @@ test('returns 404 with error msg if wrong url ', async () => {
       )
   })
 
+
+  test('missing likes property defaults to 0 likes ', async () => {
+
+    const zeroLikesTestBlog = {
+      title: "ZeroLikes Test",
+      author: "Test God",
+      url: "127.0.0.1"
+      //missing likes
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(zeroLikesTestBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    const response = await api
+     .get('/api/blogs')
+
+    const cleanedBlog = response.body.map(blog => {
+
+    //Mongo adds, _id and __v --> remove those
+    ({_id, __v, ...cleanBlog} = blog)
+    return cleanBlog
+
+     })
+
+    //expect(response.body.length).toBe(initBlogs.length + 1)
+    expect(cleanedBlog).toContainEqual(
+      {
+        title: "ZeroLikes Test",
+        author: "Test God",
+        url: "127.0.0.1",
+        likes: 0  //expected to have likes fixed
+      }
+    )
+
+  })
+
   afterAll(() => {
     server.close()
   })

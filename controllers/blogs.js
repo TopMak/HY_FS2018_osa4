@@ -83,4 +83,27 @@ blogsRouter.delete('/:id', async (request, response) => {
 
 })
 
+/* - PUT - modify a blog by id -*/
+
+blogsRouter.put('/:id', async (request, response) => {
+
+  //Current implementation allows to modify everything (except id)
+  const updateToBlog = {
+    title: request.body.title,
+    author: request.body.author,
+    url: request.body.url,
+    likes: request.body.likes,
+  }
+
+  try {
+    // "new":true parameter makes api to returns the modified object
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, updateToBlog, { new: true })
+    response.status(200).json(updatedBlog)
+
+  } catch (err) {
+    console.log(err)
+    response.status(400).send({ error: 'malformatted id' })
+  }
+})
+
 module.exports = blogsRouter

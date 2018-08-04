@@ -211,6 +211,34 @@ describe('DELETE tests', async () => {
 
 }) //End of describe DELETE tests
 
+describe('UPDATE tests', async () => {
+
+  test('UPDATE by id, check for status 200 and compare update', async () => {
+
+    const countBeforeUpdate = await getAllBlogs()
+
+    //spread syntax for deep copy (so we don't modify original data)
+    let modifiedPost = { ... countBeforeUpdate[0] }
+
+    modifiedPost.likes += 50
+
+    const response = await api
+      .put(`/api/blogs/${modifiedPost.id}`)
+      .send(modifiedPost)
+      .expect(200)
+
+    const countAfterUpdate = await getAllBlogs()
+
+    console.log(countAfterUpdate[0]);
+
+    expect(countAfterUpdate[0].likes).toBe(countBeforeUpdate[0].likes + 50)
+    //Object comparison, not sure if necessary
+    expect(countAfterUpdate[0]).toEqual(modifiedPost)
+
+  })
+
+}) //End of describe UPDATE tests
+
 afterAll(() => {
   server.close()
 })

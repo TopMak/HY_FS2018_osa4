@@ -13,16 +13,17 @@ const formatBlog = (blog) => {
 
 /* - GET all -*/
 
-blogsRouter.get('/', (request, response) => {
-  Blog
-    .find({})
-    .then(blogs => {
-      response.json(blogs)
-    })
-    .catch( err => {
-      console.log(err)
-      response.status(503)
-    })
+blogsRouter.get('/', async (request, response) => {
+
+  try {
+    const blogs = await Blog.find({})
+    response.json(blogs)
+
+  } catch (err) {
+    console.log(err)
+    response.status(503)
+  }
+
 })
 
 /* - GET by id -*/
@@ -46,14 +47,7 @@ blogsRouter.get('/:id', async (request, response) => {
 
 /* - POST - submit a new blog -*/
 
-blogsRouter.post('/', (request, response) => {
-
-  //When likes property is missing, add and set zero ---> Not the purpose of task?
-  // if(!request.body.hasOwnProperty("likes")){
-  //   console.log("likes is missing");
-  //   request.body.likes = 0
-  // }
-
+blogsRouter.post('/', async (request, response) => {
 
   if (request.body.likes === null) {
       //console.log(request.body.likes);
@@ -68,11 +62,10 @@ blogsRouter.post('/', (request, response) => {
 
   const blog = new Blog(request.body)
 
-  blog
-    .save()
-    .then(result => {
-      response.status(201).json(result)
-    })
+  //TODO  Try-catch perhaps below?
+
+  const newBlog = await blog.save()
+  response.status(201).json(newBlog)
 })
 
 /* - DELETE - a blog by id -*/

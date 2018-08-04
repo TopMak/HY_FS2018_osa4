@@ -82,7 +82,7 @@ describe('API tests', async () => {
 
 describe('POST tests', async () => {
 
-  test('add blog post and check if it is returned ', async () => {
+  test('add blog post and check for 201 ', async () => {
 
     const countBeforePost = await getAllBlogs()
 

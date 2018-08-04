@@ -60,13 +60,11 @@ blogsRouter.post('/', (request, response) => {
       request.body.likes = 0
   }
 
-
   //When url or tittle property is missing, return status 404
   if( !request.body.hasOwnProperty("url") || !request.body.hasOwnProperty("title") ){
     //console.log("missing url and/or title");
     return response.status(400).end()
   }
-
 
   const blog = new Blog(request.body)
 
@@ -75,6 +73,21 @@ blogsRouter.post('/', (request, response) => {
     .then(result => {
       response.status(201).json(result)
     })
+})
+
+/* - DELETE - a blog by id -*/
+
+blogsRouter.delete('/:id', async (request, response) => {
+
+  try {
+      await Blog.findByIdAndRemove(request.params.id)
+
+      response.status(204).end()
+    } catch (exception) {
+      console.log(exception)
+      response.status(400).send({ error: 'malformatted id' })
+    }
+
 })
 
 module.exports = blogsRouter

@@ -14,9 +14,9 @@ const { formatBlog, initBlogs, newBlogPost, getAllBlogs, nonExistingId } = requi
     }
   })
 
-describe('API tests', () => {
+describe('API tests', async () => {
 
-  describe('GET tests', () => {
+  describe('GET tests', async () => {
 
   //Combined get all and json check
   test('GET all: blogs are returned and format is JSON', async () => {
@@ -46,8 +46,7 @@ describe('API tests', () => {
   test('GET individual blog by id: is returned as JSON', async () => {
 
     const blogsBeforeTest = await getAllBlogs()
-    const randIndex = Math.floor(Math.random() * blogsBeforeTest.length-1)
-    const testBlog = blogsBeforeTest[randIndex]
+    const testBlog = blogsBeforeTest[0]
 
     const response = await api
       .get(`/api/blogs/${testBlog.id}`)
@@ -81,52 +80,41 @@ describe('API tests', () => {
 
 }) //End of describe GET tests
 
-describe('POST tests', () => {
+describe('POST tests', async () => {
 
   test('add blog post and check if it is returned ', async () => {
 
-     await api
+    const countBeforePost = await getAllBlogs()
+
+     response = await api
        .post('/api/blogs')
        .send(newBlogPost)
        .expect(201)
        .expect('Content-Type', /application\/json/)
 
-     //check if the new post is returned
+     // const response = await api
+     //  .get('/api/blogs')
 
-     const response = await api
-      .get('/api/blogs')
+     const countAfterPost = await getAllBlogs()
+     expect(countAfterPost.length).toBe(countBeforePost.length + 1)
 
-      const cleanedBlog = response.body.map(blog => {
+     //expect(countAfterPost).toContainEqual( formatBlog(response.body) )
+     expect(countAfterPost).toContainEqual(
+       {
+         title: "Javascript Fatigue",
+         author: "Eric Clemmons",
+         url: "https://medium.com/@ericclemmons/javascript-fatigue-48d4011b6fc4",
+         likes: 0,
+         id: response.body._id
+       }
+     )
 
-      //Mongo adds, _id and __v --> remove those
-      ({_id, __v, ...cleanBlog} = blog)
-      return cleanBlog
-
-      })
-
-
-      expect(response.body.length).toBe(initBlogs.length + 1)
-      //console.log("typeof cleanedblog:", typeof cleanedBlog);
-      //console.log(cleanedBlog);
-      expect(cleanedBlog).toContainEqual(
-        {
-          title: "Javascript Fatigue",
-          author: "Eric Clemmons",
-          url: "https://medium.com/@ericclemmons/javascript-fatigue-48d4011b6fc4",
-          likes: 0
-        }
-      )
   })
 
 
   test('missing likes property defaults to 0 likes ', async () => {
 
-    // const zeroLikesTestBlog = {
-    //   title: "ZeroLikes Test",
-    //   author: "Test God",
-    //   url: "127.0.0.1"
-    //   //missing likes
-    // }
+    const countBeforePost = await getAllBlogs()
 
     const zeroLikesTestBlog = {
       title: "ZeroLikes Test",
@@ -135,37 +123,32 @@ describe('POST tests', () => {
       likes: null
     }
 
-    await api
+    response = await api
       .post('/api/blogs')
       .send(zeroLikesTestBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
-    const response = await api
-     .get('/api/blogs')
+    const countAfterPost = await getAllBlogs()
 
-    const cleanedBlog = response.body.map(blog => {
+    expect(countAfterPost.length).toBe(countBeforePost.length + 1)
 
-    //Mongo adds, _id and __v --> remove those
-    ({_id, __v, ...cleanBlog} = blog)
-    return cleanBlog
-
-     })
-
-    //expect(response.body.length).toBe(initBlogs.length + 1)
-    expect(cleanedBlog).toContainEqual(
+    //expect(countAfterPost).toContainEqual( formatBlog(response.body) )
+    expect(countAfterPost).toContainEqual(
       {
         title: "ZeroLikes Test",
         author: "Test God",
         url: "127.0.0.1",
-        likes: 0  //expected to have likes fixed
-      }
-    )
+        likes: 0,
+        id: response.body._id
+      })
 
   })
 
 
   test('returns 400 if url or tittle is missing ', async () => {
+
+    const countBeforePost = await getAllBlogs()
 
     const missingUrlBlog = {
       title: "Missing Url Test",
@@ -177,7 +160,6 @@ describe('POST tests', () => {
       author: "Test God",
       url: "127.0.0.1",
       likes: 100
-      //missing likes
     }
 
     await api
@@ -190,9 +172,44 @@ describe('POST tests', () => {
       .send(missingUrlBlog)
       .expect(400)
 
+    const countAfterPost = await getAllBlogs()
+
+    //Make sure nothing was added to db
+    expect(countAfterPost.length).toBe(countBeforePost.length)
+
     })
 
 }) //End of describe POST tests
+
+describe('DELETE tests', async () => {
+
+  beforeAll(async () => {
+    deletedTestPost = new Blog({
+      title: "RemoveByID test",
+      author: "Test God",
+      url: "127.0.0.1",
+      likes: 100
+    })
+    await deletedTestPost.save()
+  })
+
+  test('DELETE by id and returns 204', async () => {
+    const countBeforeDelete = await getAllBlogs()
+
+    //Check that deletedTestPost is actually added in first place
+    expect(countBeforeDelete).toContainEqual(formatBlog(deletedTestPost))
+
+    await api
+      .delete(`/api/blogs/${deletedTestPost._id}`)
+      .expect(204)
+
+    const countAfterDelete = await getAllBlogs()
+
+    expect(countAfterDelete).not.toContainEqual(deletedTestPost)
+    expect(countAfterDelete.length).toBe(countBeforeDelete.length - 1)
+  })
+
+}) //End of describe DELETE tests
 
 afterAll(() => {
   server.close()

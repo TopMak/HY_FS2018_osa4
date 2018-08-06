@@ -1,8 +1,10 @@
 const supertest = require('supertest')
 const { app, server } = require('../index')
 const api = supertest(app)
+const bcrypt = require('bcrypt')
 const Blog = require('../models/blog')
-const { formatBlog, initBlogs, newBlogPost, getAllBlogs, nonExistingId } = require('./api_helper')
+const User = require('../models/user')
+const { formatBlog, initBlogs, newBlogPost, getAllBlogs, nonExistingId, initTestUSers, usersInDb } = require('./api_helper')
 
 
   beforeAll(async () => {
@@ -14,7 +16,7 @@ const { formatBlog, initBlogs, newBlogPost, getAllBlogs, nonExistingId } = requi
     }
   })
 
-describe('API tests', async () => {
+describe.skip('/api/blogs tests', async () => {
 
   describe('GET tests', async () => {
 
@@ -239,8 +241,79 @@ describe('UPDATE tests', async () => {
 
 }) //End of describe UPDATE tests
 
+}) //End of describe API tests
+
+describe('/api/users tests', async () => {
+
+  describe('init test users', async () => {
+
+    beforeAll(async () => {
+      await User.remove({})
+
+      for (let user of initTestUSers) {
+        const saltRounds = 10
+        const passwordHash = await bcrypt.hash(user.password, saltRounds)
+        let userObj = new User(
+          {
+            username: user.username,
+            name: user.name,
+            isAdult: user.isAdult,
+            passwordHash: passwordHash
+          }
+        )
+        await userObj.save()
+      }
+    })
+
+
+    test('POST /api/users - new user can be created', async () => {
+      const usersBeforeOperation = await usersInDb()
+
+      const newUser = {
+        username: 'root',
+        name: 'Superuser',
+        password: 'salainensalainen',
+        isAdult: false
+      }
+
+      const result = await api
+        .post('/api/users')
+        .send(newUser)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      //expect(result.body).toContainEqual( )
+
+      const usersAfterOperation = await usersInDb()
+      expect(usersAfterOperation.length).toBe(usersBeforeOperation.length + 1)
+    })
+
+    test('POST /api/users - creating existing users returns error', async () => {
+      const usersBeforeOperation = await usersInDb()
+
+      const newUser = {
+        username: 'TepTest66',
+        name: 'Teppo Testaaja',
+        password: 'salainensalainen',
+        isAdult: false
+      }
+
+      const result = await api
+        .post('/api/users')
+        .send(newUser)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(result.body).toEqual( { error: 'username must be unique' } )
+
+      const usersAfterOperation = await usersInDb()
+      expect(usersAfterOperation.length).toBe(usersBeforeOperation.length)
+    })
+
+  })
+
+})
+
 afterAll(() => {
   server.close()
 })
-
-}) //End of describe API tests

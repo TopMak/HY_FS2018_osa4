@@ -1,4 +1,5 @@
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 const initBlogs = [
   {
@@ -51,6 +52,22 @@ const initBlogs = [
   }
 ]
 
+const initTestUSers = [
+  {
+    username:"TepTest66",
+    name: "Teppo Testaaja",
+    isAdult: true,
+    password: "TepinHuonoSalasana123#"
+
+  },
+  {
+    username:"Roro02",
+    name: "Roni Ropaaja",
+    isAdult: false,
+    password: "RoroYoyoHoho02#!"
+  }
+]
+
 const newBlogPost = {
   title: "Javascript Fatigue",
   author: "Eric Clemmons",
@@ -80,10 +97,17 @@ const getAllBlogs = async () => {
   return blogs.map(formatBlog)
 }
 
+const usersInDb = async () => {
+  const users = await User.find({})
+  return users
+}
+
 module.exports = {
   initBlogs,
   getAllBlogs,
   formatBlog,
   nonExistingId,
-  newBlogPost
+  newBlogPost,
+  initTestUSers,
+  usersInDb
 }

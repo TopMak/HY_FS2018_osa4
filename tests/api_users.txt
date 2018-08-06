@@ -1,0 +1,56 @@
+// const supertest = require('supertest')
+// const { app, server } = require('../index')
+// const api = supertest(app)
+// const User = require('../models/user')
+// const bcrypt = require('bcrypt')
+// const { initTestUSers, usersInDb } = require('./api_helper')
+//
+//
+// describe.skip('when there is initially one user at db', async () => {
+//
+//   beforeAll(async () => {
+//     await User.remove({})
+//
+//     for (let user of initTestUSers) {
+//       const saltRounds = 10
+//       const passwordHash = await bcrypt.hash(user.password, saltRounds)
+//       let userObj = new User(
+//         {
+//           username: user.username,
+//           name: user.name,
+//           isAdult: user.isAdult,
+//           passwordHash: passwordHash
+//         }
+//       )
+//       await userObj.save()
+//     }
+//   })
+//
+//
+//   test('POST /api/users - new user can be created', async () => {
+//     const usersBeforeOperation = await usersInDb()
+//
+//     const newUser = {
+//       username: 'root',
+//       name: 'Superuser',
+//       password: 'salainensalainen',
+//       isAdult: false
+//     }
+//
+//     const result = await api
+//       .post('/api/users')
+//       .send(newUser)
+//       .expect(200)
+//       .expect('Content-Type', /application\/json/)
+//
+//     //expect(result.body).toContainEqual( )
+//
+//     const usersAfterOperation = await usersInDb()
+//     expect(usersAfterOperation.length).toBe(usersBeforeOperation.length + 1)
+//   })
+//
+// })
+//
+// afterAll(() => {
+//   server.close()
+// })

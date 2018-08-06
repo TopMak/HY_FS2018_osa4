@@ -1,23 +1,27 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
-const formatBlog = (blog) => {
-  return {
-    title: blog.title,
-    author: blog.author,
-    url: blog.url,
-    likes: blog.likes,
-    id: blog._id
-  }
-}
+// const formatBlog = (blog) => {
+//   return {
+//     title: blog.title,
+//     author: blog.author,
+//     url: blog.url,
+//     likes: blog.likes,
+//     id: blog._id,
+//     user: blog.user
+//   }
+// }
 
 /* - GET all -*/
 
 blogsRouter.get('/', async (request, response) => {
 
   try {
-    const blogs = await Blog.find({})
-    response.json(blogs)
+    const blogs = await Blog
+    .find({})
+    .populate('user', { username: true, name: true } )
+    response.json( blogs.map( blog => Blog.format(blog)) )
 
   } catch (err) {
     console.log(err)
@@ -60,11 +64,24 @@ blogsRouter.post('/', async (request, response) => {
     return response.status(400).end()
   }
 
-  const blog = new Blog(request.body)
+  const user = await User.findById(request.body.user)
+
+  const blog = new Blog({
+    title: request.body.title,
+    author: request.body.author,
+    url: request.body.url,
+    likes: request.body.likes,
+    user: user._id
+  })
 
   //TODO  Try-catch perhaps below?
 
   const newBlog = await blog.save()
+
+  //Save the blog to user's blog array!
+  user.blogs = user.blogs.concat(newBlog._id)
+  await user.save()
+
   response.status(201).json(newBlog)
 })
 

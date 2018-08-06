@@ -1,12 +1,15 @@
 const usersRouter = require('express').Router()
 const User = require('../models/user')
+const Blog = require('../models/blog')
 const bcrypt = require('bcrypt')
 
 /* GET - return all users (format without passwords...etc.) - */
 usersRouter.get('/', async (request, response) => {
 
   try {
-    const allUsers = await User.find({})
+    const allUsers = await User
+      .find({})
+      .populate('blogs', {  title: true, author: true, likes: true, url: true } )
     //console.log(allUsers);
     response.json(allUsers.map( user => User.format(user)))
 

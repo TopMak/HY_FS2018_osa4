@@ -310,6 +310,28 @@ describe('/api/users tests', async () => {
       expect(usersAfterOperation.length).toBe(usersBeforeOperation.length)
     })
 
+    test('POST /api/users - require password of 3 or more characters', async () => {
+      const usersBeforeOperation = await usersInDb()
+
+      const newUser = {
+        username: 'PassTest00',
+        name: 'Password Test',
+        password: 'sa',
+        isAdult: false
+      }
+
+      const result = await api
+        .post('/api/users')
+        .send(newUser)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(result.body).toEqual( { error: 'password is too short' } )
+
+      const usersAfterOperation = await usersInDb()
+      expect(usersAfterOperation.length).toBe(usersBeforeOperation.length)
+    })
+
   })
 
 })

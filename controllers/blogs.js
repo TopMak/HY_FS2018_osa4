@@ -120,11 +120,12 @@ blogsRouter.delete('/:id', async (request, response) => {
 
     //Fetch the blog...
     const checkBlog = await Blog.findById(request.params.id)
-    console.log(checkBlog);
+    // console.log(checkBlog);
+    
     // ...and check if token id does NOT match with user's
     if( checkBlog.user.toString() !== validToken.id){
-      console.log("not the same user!");
-      console.log(checkBlog.user.toString(), " >>>>> ", validToken.id);
+      // console.log("not the same user!");
+      // console.log(checkBlog.user.toString(), " >>>>> ", validToken.id);
       return response.status(401).json({ error: "not authorized!" })
     }
 

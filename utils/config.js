@@ -10,6 +10,12 @@ if (process.env.NODE_ENV === 'test') {
   mongoUrl = process.env.TEST_MONGODB_URI
 }
 
+//Option to run test DB with dev port
+if(process.env.NODE_ENV === 'development2'){
+  port = process.env.PORT
+  mongoUrl = process.env.TEST_MONGODB_URI
+}
+
 module.exports = {
   mongoUrl,
   port

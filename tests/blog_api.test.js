@@ -13,19 +13,6 @@ const { formatBlog, initTestBlogs, newBlogPost, getAllBlogs,
     await Blog.remove({})
     await User.remove({})
 
-    for (let blog of initTestBlogs) {
-      let blogObject = new Blog(
-        {
-          title: blog.title,
-          author: blog.author,
-          url: blog.url,
-          likes: blog.likes,
-          user: mongoose.Types.ObjectId(blog.user)
-        }
-      )
-      await blogObject.save()
-    }
-
     for (let user of initTestUSers) {
       const saltRounds = 10
       const passwordHash = await bcrypt.hash(user.password, saltRounds)
@@ -36,12 +23,25 @@ const { formatBlog, initTestBlogs, newBlogPost, getAllBlogs,
           name: user.name,
           isAdult: user.isAdult,
           passwordHash: passwordHash,
-          blogs: user.blogs.map(blog => mongoose.Types.ObjectId(blog))
+          blogs: user.blogs     //user.blogs.map(blog => mongoose.Types.ObjectId(blog))
         }
       )
       await userObj.save()
     }
 
+    for (let blog of initTestBlogs) {
+      let blogObject = new Blog(
+        {
+          _id: mongoose.Types.ObjectId(blog._id),
+          title: blog.title,
+          author: blog.author,
+          url: blog.url,
+          likes: blog.likes,
+          user: blog.user     //mongoose.Types.ObjectId(blog.user)
+        }
+      )
+      await blogObject.save()
+    }
 
   })
 

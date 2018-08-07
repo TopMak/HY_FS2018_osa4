@@ -4,19 +4,55 @@ const api = supertest(app)
 const bcrypt = require('bcrypt')
 const Blog = require('../models/blog')
 const User = require('../models/user')
-const { formatBlog, initBlogs, newBlogPost, getAllBlogs, nonExistingId, initTestUSers, usersInDb } = require('./api_helper')
+const mongoose = require('mongoose')
+const { formatBlog, initTestBlogs, newBlogPost, getAllBlogs,
+   nonExistingId, initTestUSers, usersInDb } = require('./api_helper')
 
-
+  //Init some posts
   beforeAll(async () => {
     await Blog.remove({})
+    await User.remove({})
 
-    for (let blog of initBlogs) {
-      let blogObject = new Blog(blog)
+    for (let blog of initTestBlogs) {
+      let blogObject = new Blog(
+        {
+          title: blog.title,
+          author: blog.author,
+          url: blog.url,
+          likes: blog.likes,
+          user: mongoose.Types.ObjectId(blog.user)
+        }
+      )
       await blogObject.save()
     }
+
+    for (let user of initTestUSers) {
+      const saltRounds = 10
+      const passwordHash = await bcrypt.hash(user.password, saltRounds)
+      let userObj = new User(
+        {
+          _id: mongoose.Types.ObjectId(user.id),
+          username: user.username,
+          name: user.name,
+          isAdult: user.isAdult,
+          passwordHash: passwordHash,
+          blogs: user.blogs.map(blog => mongoose.Types.ObjectId(blog))
+        }
+      )
+      await userObj.save()
+    }
+
+
   })
 
-describe.skip('/api/blogs tests', async () => {
+  //Init some users
+  // beforeAll(async () => {
+  //
+  //
+  //
+  // })
+
+describe('/api/blogs tests', async () => {
 
   describe('GET tests', async () => {
 
@@ -33,13 +69,19 @@ describe.skip('/api/blogs tests', async () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.length).toBe(countBeforeTest.length)
-    const formattedResponse = (response.body.map(formatBlog))
 
+    const formattedResponse = response.body.map(blog =>  {
+      //spread syntax
+      return {...blog, user: blog.user._id.toString() }
+
+     })
+
+    //console.log(typeof response.body[0].user);
+    //console.log(formattedResponse);
     // console.log(typeof countBeforeTest);
-    // console.log(countBeforeTest);
+    //console.log(countBeforeTest);
 
     countBeforeTest.forEach( blog => {
-      //console.log(typeof blog);
       expect(formattedResponse).toContainEqual(blog)
     })
 
@@ -48,16 +90,20 @@ describe.skip('/api/blogs tests', async () => {
   test('GET individual blog by id: is returned as JSON', async () => {
 
     const blogsBeforeTest = await getAllBlogs()
+    //console.log(blogsBeforeTest)
     const testBlog = blogsBeforeTest[0]
-
+    //console.log(testBlog)
     const response = await api
       .get(`/api/blogs/${testBlog.id}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
-    const formattedResponse = formatBlog(response.body)
+    //console.log(response.body.user);
 
-    expect(formattedResponse).toEqual(testBlog)
+    const formattedResponse = {...response.body, user: response.body.user._id.toString() }
+
+
+    expect(formattedResponse).toEqual( testBlog )
   })
 
 
@@ -88,9 +134,25 @@ describe('POST tests', async () => {
 
     const countBeforePost = await getAllBlogs()
 
+    //Login part BEGINS
+    //Yeah, kinda ugly right?
+    const {isAdult, name, ...userToTest} = initTestUSers[0]
+
+    //response format {token: xxx, username: xxx, name: xxx}
+    tokenResponse = await api
+      .post('/api/login')
+      .send(userToTest)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(tokenResponse.body.token).not.toBe(null)
+
+    //Login part ENDS
+
      response = await api
        .post('/api/blogs')
-       .send(newBlogPost)
+       .set('Authorization', `Bearer ${tokenResponse.body.token}`)
+       .send(newBlogPost)   //Defined in api_helper.js
        .expect(201)
        .expect('Content-Type', /application\/json/)
 
@@ -104,10 +166,11 @@ describe('POST tests', async () => {
      expect(countAfterPost).toContainEqual(
        {
          title: "Javascript Fatigue",
-         author: "Eric Clemmons",
+         author: initTestUSers[0].name,
          url: "https://medium.com/@ericclemmons/javascript-fatigue-48d4011b6fc4",
          likes: 0,
-         id: response.body._id
+         id: response.body._id,
+         user: initTestUSers[0].id
        }
      )
 
@@ -118,6 +181,21 @@ describe('POST tests', async () => {
 
     const countBeforePost = await getAllBlogs()
 
+    //Login part BEGINS
+    //Yeah, kinda ugly right?
+    const {isAdult, name, ...userToTest} = initTestUSers[0]
+
+    //response format {token: xxx, username: xxx, name: xxx}
+    tokenResponse = await api
+      .post('/api/login')
+      .send(userToTest)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(tokenResponse.body.token).not.toBe(null)
+
+    //Login part ENDS
+
     const zeroLikesTestBlog = {
       title: "ZeroLikes Test",
       author: "Test God",
@@ -127,6 +205,7 @@ describe('POST tests', async () => {
 
     response = await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${tokenResponse.body.token}`)
       .send(zeroLikesTestBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -139,10 +218,11 @@ describe('POST tests', async () => {
     expect(countAfterPost).toContainEqual(
       {
         title: "ZeroLikes Test",
-        author: "Test God",
+        author: initTestUSers[0].name,
         url: "127.0.0.1",
         likes: 0,
-        id: response.body._id
+        id: response.body._id,
+        user: initTestUSers[0].id
       })
 
   })
@@ -151,6 +231,21 @@ describe('POST tests', async () => {
   test('returns 400 if url or tittle is missing ', async () => {
 
     const countBeforePost = await getAllBlogs()
+
+    //Login part BEGINS
+    //Yeah, kinda ugly right?
+    const {isAdult, name, ...userToTest} = initTestUSers[0]
+
+    //response format {token: xxx, username: xxx, name: xxx}
+    tokenResponse = await api
+      .post('/api/login')
+      .send(userToTest)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(tokenResponse.body.token).not.toBe(null)
+
+    //Login part ENDS
 
     const missingUrlBlog = {
       title: "Missing Url Test",
@@ -166,11 +261,13 @@ describe('POST tests', async () => {
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${tokenResponse.body.token}`)
       .send(missingTittleBlog)
       .expect(400)
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${tokenResponse.body.token}`)
       .send(missingUrlBlog)
       .expect(400)
 
@@ -183,26 +280,91 @@ describe('POST tests', async () => {
 
 }) //End of describe POST tests
 
-describe('DELETE tests', async () => {
+describe('DELETE tests -- IMPERFECT: not checking blog count at user object', async () => {
 
   beforeAll(async () => {
+    //Get users in db...
+
+    //const testUsers = await usersInDb()
+
+    // and set first one as author(owner) of the post
     deletedTestPost = new Blog({
       title: "RemoveByID test",
-      author: "Test God",
+      author: initTestUSers[0].name,
       url: "127.0.0.1",
-      likes: 100
+      likes: 100,
+      user: initTestUSers[0].id
     })
+    console.log(deletedTestPost);
     await deletedTestPost.save()
   })
 
-  test('DELETE by id and returns 204', async () => {
+
+
+  test('DELETE by id, without auth headers, expect 401', async () => {
     const countBeforeDelete = await getAllBlogs()
+
+    //Check that deletedTestPost is actually added in first place
+    expect(countBeforeDelete).toContainEqual(formatBlog(deletedTestPost))
+
+    response = await api
+      .delete(`/api/blogs/${deletedTestPost._id}`)
+      .expect(401)
+
+    const countAfterDelete = await getAllBlogs()
+
+    expect(countAfterDelete).toContainEqual(formatBlog(deletedTestPost))
+    expect(countAfterDelete.length).toBe(countBeforeDelete.length)
+    expect(response.body).toEqual({"error": "jwt must be provided"})  //Error occurs when provided token is null
+  })
+
+
+  test('DELETE by id, valid token but wrong user, expect 401', async () => {
+    const countBeforeDelete = await getAllBlogs()
+
+    //Check that deletedTestPost is actually added in first place
+    expect(countBeforeDelete).toContainEqual(formatBlog(deletedTestPost))
+
+    response = await api
+      .delete(`/api/blogs/${deletedTestPost._id}`)
+      .set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRldkRlbGw4NiIsImlkIjoiNWI2ODYyYWVhNDFmZjIyNjk2ZTc1ODRiIiwiaWF0IjoxNTMzNjI4NjA0fQ.nn3zGMPBA-KQiky3koQpmhdiGhw0qO_oVZl0kAtJ81A')
+      .expect(401)
+
+    const countAfterDelete = await getAllBlogs()
+
+    expect(countAfterDelete).toContainEqual(formatBlog(deletedTestPost))
+    expect(countAfterDelete.length).toBe(countBeforeDelete.length)
+    expect(response.body).toEqual({ error: "not authorized!" })
+  })
+
+
+  test('DELETE by id, valid token and right user, and returns 204', async () => {
+    const countBeforeDelete = await getAllBlogs()
+
+    //const testUsers = await usersInDb()
+    //console.log(testUsers);
+    //Login part BEGINS
+    //Yeah, kinda ugly right?
+    const {isAdult, name, blogs, ...userToTest} = initTestUSers[0]
+    console.log(initTestUSers);
+    console.log(userToTest);
+    //response format {token: xxx, username: xxx, name: xxx}
+    tokenResponse = await api
+      .post('/api/login')
+      .send(userToTest)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(tokenResponse.body.token).not.toBe(null)
+    console.log(tokenResponse.body.token);
+    //Login part ENDS
 
     //Check that deletedTestPost is actually added in first place
     expect(countBeforeDelete).toContainEqual(formatBlog(deletedTestPost))
 
     await api
       .delete(`/api/blogs/${deletedTestPost._id}`)
+      .set('Authorization', `Bearer ${tokenResponse.body.token}`)
       .expect(204)
 
     const countAfterDelete = await getAllBlogs()
@@ -213,7 +375,7 @@ describe('DELETE tests', async () => {
 
 }) //End of describe DELETE tests
 
-describe('UPDATE tests', async () => {
+describe.skip('UPDATE tests', async () => {
 
   test('UPDATE by id, check for status 200 and compare update', async () => {
 
@@ -244,27 +406,6 @@ describe('UPDATE tests', async () => {
 }) //End of describe API tests
 
 describe('/api/users tests', async () => {
-
-  describe('init test users', async () => {
-
-    beforeAll(async () => {
-      await User.remove({})
-
-      for (let user of initTestUSers) {
-        const saltRounds = 10
-        const passwordHash = await bcrypt.hash(user.password, saltRounds)
-        let userObj = new User(
-          {
-            username: user.username,
-            name: user.name,
-            isAdult: user.isAdult,
-            passwordHash: passwordHash
-          }
-        )
-        await userObj.save()
-      }
-    })
-
 
     test('POST /api/users - new user can be created', async () => {
       const usersBeforeOperation = await usersInDb()
@@ -332,7 +473,6 @@ describe('/api/users tests', async () => {
       expect(usersAfterOperation.length).toBe(usersBeforeOperation.length)
     })
 
-  })
 
 })
 

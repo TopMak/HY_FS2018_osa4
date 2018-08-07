@@ -34,10 +34,12 @@ blogsRouter.get('/', async (request, response) => {
 blogsRouter.get('/:id', async (request, response) => {
   try {
 
-    const blog = await Blog.findById(request.params.id)
+    const blog = await Blog
+      .findById(request.params.id)
+      .populate('user', { username: true, name: true } )
 
     if (blog) {
-      response.json(blog)
+      response.json(Blog.format(blog))
     } else {
       response.status(404).end()
     }
@@ -97,7 +99,7 @@ blogsRouter.post('/', async (request, response) => {
 
     if(err.name === 'JsonWebTokenError'){
       //More about : https://www.npmjs.com/package/jsonwebtoken
-      response.status(401).json({ error: exception.message })
+      response.status(401).json({ error: err.message })
     } else {
       console.log(err)
       return response.status(500).send({ error: 'Yup, codemonkeys failed to evaluate this...' })
@@ -111,12 +113,70 @@ blogsRouter.post('/', async (request, response) => {
 blogsRouter.delete('/:id', async (request, response) => {
 
   try {
-      await Blog.findByIdAndRemove(request.params.id)
 
-      response.status(204).end()
-    } catch (exception) {
-      console.log(exception)
-      response.status(400).send({ error: 'malformatted id' })
+    //Check if token is correct, not necessarily correct user!!
+    const validToken = jwt.verify(request.token, process.env.SECRET)
+    console.log(validToken);
+
+    //Fetch the blog...
+    const checkBlog = await Blog.findById(request.params.id)
+    console.log(checkBlog);
+    // ...and check if token id does NOT match with user's
+    if( checkBlog.user.toString() !== validToken.id){
+      console.log("not the same user!");
+      console.log(checkBlog.user.toString(), " >>>>> ", validToken.id);
+      return response.status(401).json({ error: "not authorized!" })
+    }
+
+    //Remove the blog
+    await Blog.findByIdAndRemove(request.params.id)
+
+    //Find user whose the blog is...
+    const user = await User.findById(validToken.id)
+
+    //Update blogs array
+    const updatedBlogs = user.blogs.filter(blog => blog.id.toString() !== request.params.id)
+    //console.log(updatedBlogs)
+
+    //Update user with one blog removed
+    const updatedUser = {
+      username: user.username,
+      name: user.name,
+      isAdult: user.isAdult,
+      blogs: updatedBlogs
+    }
+
+    await User.findByIdAndUpdate(validToken.id, updatedUser, { new: true })
+
+    // const user = await User.findById(validToken.id)
+    //
+    // const blogExists = user.blogs.filter( blog => blog.id.toString === request.params.id)
+    //
+    // if(blogExists.length < 1){
+    //
+    // }
+
+    //await Blog.findByIdAndRemove(request.params.id)
+
+    // if(validToken.id === Blog.user.toString()){
+    //   return response.status(401).json({ error: "not authorized" })
+    // }
+
+    response.status(204).end()
+
+  } catch (err) {
+
+      if(err.name === 'JsonWebTokenError'){
+        //More about : https://www.npmjs.com/package/jsonwebtoken
+        console.log("JWT error")
+        response.status(401).json({ error: err.message })
+      } else {
+        // console.log(exception)
+        // response.status(400).send({ error: 'malformatted id' })
+        console.log(err)
+        return response.status(500).send({ error: 'Yup, codemonkeys failed to evaluate this...' })
+      }
+
     }
 
 })

@@ -1,7 +1,16 @@
 const blogsRouter = require('express').Router()
+const jwt = require('jsonwebtoken')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 
+
+const getTokenFrom = (request) => {
+  const authorization = request.get('authorization')
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    return authorization.substring(7)
+  }
+  return null
+}
 
 /* - GET all -*/
 
@@ -43,36 +52,58 @@ blogsRouter.get('/:id', async (request, response) => {
 
 blogsRouter.post('/', async (request, response) => {
 
-  if (request.body.likes === null) {
-      //console.log(request.body.likes);
-      request.body.likes = 0
+  //Token verifying will throw an error if unvalid
+  try {
+
+    const token = getTokenFrom(request)
+    const validToken = jwt.verify(token, process.env.SECRET)
+
+    console.log(validToken);
+
+    if (request.body.likes === null) {
+        //console.log(request.body.likes);
+        request.body.likes = 0
+    }
+
+    //When url or tittle property is missing, return status 404
+    if( !request.body.hasOwnProperty("url") || !request.body.hasOwnProperty("title") ){
+      //console.log("missing url and/or title");
+      return response.status(400).end()
+    }
+
+    //const user = await User.findById(request.body.user)
+
+    //Necessary to query user? (since the id is already known, if token is valid?)
+    //Handle if user is deleted, but token is valid?
+    const user = await User.findById(validToken.id)
+
+    const blog = new Blog({
+      title: request.body.title,
+      author: user.name,  //Changed request.author to user.name (from db)
+      url: request.body.url,
+      likes: request.body.likes,
+      user: user._id
+    })
+
+    const newBlog = await blog.save()
+
+    //Save the blog to user's blog array!
+    user.blogs = user.blogs.concat(newBlog._id)
+    await user.save()
+
+    response.status(201).json(newBlog)
+
+  } catch (err) {
+
+    if(err.name === 'JsonWebTokenError'){
+      //More about : https://www.npmjs.com/package/jsonwebtoken
+      response.status(401).json({ error: exception.message })
+    } else {
+      console.log(err)
+      return response.status(500).send({ error: 'Yup, codemonkeys failed to evaluate this...' })
+    }
+
   }
-
-  //When url or tittle property is missing, return status 404
-  if( !request.body.hasOwnProperty("url") || !request.body.hasOwnProperty("title") ){
-    //console.log("missing url and/or title");
-    return response.status(400).end()
-  }
-
-  const user = await User.findById(request.body.user)
-
-  const blog = new Blog({
-    title: request.body.title,
-    author: request.body.author,
-    url: request.body.url,
-    likes: request.body.likes,
-    user: user._id
-  })
-
-  //TODO  Try-catch perhaps below?
-
-  const newBlog = await blog.save()
-
-  //Save the blog to user's blog array!
-  user.blogs = user.blogs.concat(newBlog._id)
-  await user.save()
-
-  response.status(201).json(newBlog)
 })
 
 /* - DELETE - a blog by id -*/

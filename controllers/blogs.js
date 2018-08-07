@@ -2,16 +2,6 @@ const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
 const User = require('../models/user')
 
-// const formatBlog = (blog) => {
-//   return {
-//     title: blog.title,
-//     author: blog.author,
-//     url: blog.url,
-//     likes: blog.likes,
-//     id: blog._id,
-//     user: blog.user
-//   }
-// }
 
 /* - GET all -*/
 

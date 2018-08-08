@@ -81,7 +81,7 @@ blogsRouter.post('/', async (request, response) => {
 
     const blog = new Blog({
       title: request.body.title,
-      author: user.name,  //Changed request.author to user.name (from db)
+      author: request.author,
       url: request.body.url,
       likes: request.body.likes,
       user: user._id
@@ -121,7 +121,7 @@ blogsRouter.delete('/:id', async (request, response) => {
     //Fetch the blog...
     const checkBlog = await Blog.findById(request.params.id)
     // console.log(checkBlog);
-    
+
     // ...and check if token id does NOT match with user's
     if( checkBlog.user.toString() !== validToken.id){
       // console.log("not the same user!");

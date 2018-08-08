@@ -166,7 +166,7 @@ describe('POST tests', async () => {
      expect(countAfterPost).toContainEqual(
        {
          title: "Javascript Fatigue",
-         author: initTestUSers[0].name,
+         author: "Eric Clemmons",
          url: "https://medium.com/@ericclemmons/javascript-fatigue-48d4011b6fc4",
          likes: 0,
          id: response.body._id,
@@ -218,7 +218,7 @@ describe('POST tests', async () => {
     expect(countAfterPost).toContainEqual(
       {
         title: "ZeroLikes Test",
-        author: initTestUSers[0].name,
+        author: "Test God",
         url: "127.0.0.1",
         likes: 0,
         id: response.body._id,
@@ -290,7 +290,7 @@ describe('DELETE tests -- IMPERFECT: not checking blog count at user object', as
     // and set first one as author(owner) of the post
     deletedTestPost = new Blog({
       title: "RemoveByID test",
-      author: initTestUSers[0].name,
+      author: "Remove Testuser",
       url: "127.0.0.1",
       likes: 100,
       user: initTestUSers[0].id

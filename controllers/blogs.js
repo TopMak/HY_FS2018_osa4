@@ -60,10 +60,9 @@ blogsRouter.post('/', async (request, response) => {
     //const token = getTokenFrom(request)
     const validToken = jwt.verify(request.token, process.env.SECRET)
 
-    console.log(validToken);
-
-    if (request.body.likes === null) {
-        //console.log(request.body.likes);
+    //console.log(validToken);
+    if (!request.body.hasOwnProperty("likes") || request.body.likes === null) {
+        //console.log("likes missing, add property with 0 likes");
         request.body.likes = 0
     }
 
@@ -93,7 +92,7 @@ blogsRouter.post('/', async (request, response) => {
     user.blogs = user.blogs.concat(newBlog._id)
     await user.save()
 
-    response.status(201).json(newBlog)
+    response.status(201).json(Blog.format(newBlog))
 
   } catch (err) {
 

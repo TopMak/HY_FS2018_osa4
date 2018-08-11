@@ -86,11 +86,13 @@ blogsRouter.post('/', async (request, response) => {
       user: user._id
     })
 
-    const newBlog = await blog.save()
+    const newBlog = await blog
+        .save( blog.populate('user').execPopulate() )
+    //console.log("response after save " + newBlog);
 
     //Save the blog to user's blog array!
     user.blogs = user.blogs.concat(newBlog._id)
-    await user.save()
+    const resp = await user.save()
 
     response.status(201).json(Blog.format(newBlog))
 
@@ -120,6 +122,13 @@ blogsRouter.delete('/:id', async (request, response) => {
     //Fetch the blog...
     const checkBlog = await Blog.findById(request.params.id)
     // console.log(checkBlog);
+
+    //If blog has no user
+    if(!checkBlog.hasOwnProperty('user') || checkBlog.user === null){
+      console.log("Blog user doesn't exist anymore");
+      await Blog.findByIdAndRemove(request.params.id)
+      return response.status(204).end()
+    }
 
     // ...and check if token id does NOT match with user's
     if( checkBlog.user.toString() !== validToken.id){
@@ -186,17 +195,23 @@ blogsRouter.delete('/:id', async (request, response) => {
 blogsRouter.put('/:id', async (request, response) => {
 
   //Current implementation allows to modify everything (except id)
-  const updateToBlog = {
-    title: request.body.title,
-    author: request.body.author,
-    url: request.body.url,
-    likes: request.body.likes,
-  }
+  // const updateToBlog = {
+  //   title: request.body.title,
+  //   author: request.body.author,
+  //   url: request.body.url,
+  //   likes: request.body.likes,
+  // }
+
+  //NOTE Modified to only increment likes by 1!!
 
   try {
     // "new":true parameter makes api to returns the modified object
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, updateToBlog, { new: true })
-    response.status(200).json(updatedBlog)
+    //const fetchBlog = await Blog.findById(request.params.id, )
+    const updatedBlog = await Blog
+      .findByIdAndUpdate(request.params.id, {$inc: { likes : 1 }}, { new: true })
+      .populate('user', { username: true, name: true } )
+
+    response.status(200).json(Blog.format(updatedBlog))
 
   } catch (err) {
     console.log(err)

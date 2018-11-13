@@ -219,4 +219,39 @@ blogsRouter.put('/:id', async (request, response) => {
   }
 })
 
+
+/* - POST - submit a new comment to a blog -*/
+
+blogsRouter.post('/:id/comments', async (request, response) => {
+
+  try {
+
+    const comment = request.body.comment
+    console.log(request.body);
+
+    //If comment is empty string/null
+    if(!comment){
+      console.log("Comment is empty");
+      return response.status(204).end()
+    }
+
+    const updatedBlog = await Blog
+      .findByIdAndUpdate(request.params.id, {$push: {comments: comment}}, { new: true })
+      .populate('user', { username: true, name: true } )
+
+    response.status(200).json(Blog.format(updatedBlog))
+
+  } catch (err) {
+
+    if(err.name === 'JsonWebTokenError'){
+      //More about : https://www.npmjs.com/package/jsonwebtoken
+      response.status(401).json({ error: err.message })
+    } else {
+      console.log(err)
+      return response.status(500).send({ error: 'Yup, codemonkeys failed to evaluate this...' })
+    }
+
+  }
+})
+
 module.exports = blogsRouter

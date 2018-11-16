@@ -9,7 +9,8 @@ const initTestBlogs = [
     url: "https://reactpatterns.com/",
     likes: 7,
     __v: 0,
-    user: "5b69aa87cdbd893f162bb21c"
+    user: "5b69aa87cdbd893f162bb21c",
+    comments:["testComment1", "TestComment2"]
   },
   {
     _id: "5a422aa71b54a676234d17f8",
@@ -18,7 +19,8 @@ const initTestBlogs = [
     url: "http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html",
     likes: 5,
     __v: 0,
-    user: "5b69aa87cdbd893f162bb21c"
+    user: "5b69aa87cdbd893f162bb21c",
+    comments:["testComment1", "TestComment2"]
   },
   {
     _id: "5a422b3a1b54a676234d17f9",
@@ -27,7 +29,8 @@ const initTestBlogs = [
     url: "http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html",
     likes: 12,
     __v: 0,
-    user: "5b69aa87cdbd893f162bb21c"
+    user: "5b69aa87cdbd893f162bb21c",
+    comments:["testComment1", "TestComment2"]
   },
   {
     _id: "5a422b891b54a676234d17fa",
@@ -36,7 +39,8 @@ const initTestBlogs = [
     url: "http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll",
     likes: 10,
     __v: 0,
-    user: "5b69aa88cdbd893f162bb21d"
+    user: "5b69aa88cdbd893f162bb21d",
+    comments:["testComment1", "TestComment2"]
   },
   {
     _id: "5a422ba71b54a676234d17fb",
@@ -45,7 +49,8 @@ const initTestBlogs = [
     url: "http://blog.cleancoder.com/uncle-bob/2017/03/03/TDD-Harms-Architecture.html",
     likes: 0,
     __v: 0,
-    user: "5b69aa88cdbd893f162bb21d"
+    user: "5b69aa88cdbd893f162bb21d",
+    comments:["testComment1", "TestComment2"]
   },
   {
     _id: "5a422bc61b54a676234d17fc",
@@ -54,7 +59,8 @@ const initTestBlogs = [
     url: "http://blog.cleancoder.com/uncle-bob/2016/05/01/TypeWars.html",
     likes: 2,
     __v: 0,
-    user: "5b69aa88cdbd893f162bb21d"
+    user: "5b69aa88cdbd893f162bb21d",
+    comments:["testComment1", "TestComment2"]
   }
 ]
 
@@ -117,7 +123,8 @@ const newBlogPost = {
   title: "Javascript Fatigue",
   author: "Eric Clemmons",
   url: "https://medium.com/@ericclemmons/javascript-fatigue-48d4011b6fc4",
-  likes: 0
+  likes: 0,
+  comments: []
 }
 
 const formatBlog = (blog) => {
@@ -127,7 +134,8 @@ const formatBlog = (blog) => {
     url: blog.url,
     likes: blog.likes,
     id: blog.id.toString(),   //Otherwise id check fails
-    user: blog.user.toString()
+    user: blog.user.toString(),
+    comments: blog.comments.toObject()
   }
 }
 

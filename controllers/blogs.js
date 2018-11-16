@@ -122,12 +122,16 @@ blogsRouter.delete('/:id', async (request, response) => {
     //Fetch the blog...
     const checkBlog = await Blog.findById(request.params.id)
     // console.log(checkBlog);
+    // console.log(checkBlog.hasOwnProperty('user'));
+    // console.log(('user' in checkBlog));
+    // console.log(checkBlog.user === null);
+    // console.log(checkBlog);
 
-    //If blog has no user
-    if(!checkBlog.hasOwnProperty('user') || checkBlog.user === null){
+    //If blog has no user property
+    if(!('user' in checkBlog) || checkBlog.user === null){
       console.log("Blog user doesn't exist anymore");
       await Blog.findByIdAndRemove(request.params.id)
-      return response.status(204).end()
+      return response.status(204).end() //TODO
     }
 
     // ...and check if token id does NOT match with user's

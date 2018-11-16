@@ -37,7 +37,8 @@ const { formatBlog, initTestBlogs, newBlogPost, getAllBlogs,
           author: blog.author,
           url: blog.url,
           likes: blog.likes,
-          user: blog.user     //mongoose.Types.ObjectId(blog.user)
+          user: blog.user,     //mongoose.Types.ObjectId(blog.user)
+          comments: blog.comments
         }
       )
       await blogObject.save()
@@ -53,6 +54,69 @@ const { formatBlog, initTestBlogs, newBlogPost, getAllBlogs,
   // })
 
 describe('/api/blogs tests', async () => {
+
+//  -- ** DEBUG TEST ** --
+
+  // Test for verifying some object properties
+  // Mongoose/Mongo adds some properties that leads to fail when using
+  // toContainEqual method on object
+  // Solution was to call blog.comments.toObject()
+  test.skip('DEBUG TEST', async () => {
+
+    const countBeforeTest = await getAllBlogs()
+
+    const response = await api
+      .get('/api/blogs')
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+      expect(response.body.length).toBe(countBeforeTest.length)
+
+
+      const formattedResponse = response.body.map(blog =>  {
+        return {...blog, user: blog.user._id.toString()}
+       })
+
+      // console.log(typeof response.body[0].user);
+      //console.log(formattedResponse);
+      // console.log(typeof countBeforeTest);
+      //console.log(countBeforeTest);
+
+      const testArr = []
+      const olio1 = { test1:'String tässä', numero: 23094, arrProps: ['testString', 'teststring2'] }
+      const olio2 = { test1:'String tässä myös', numero: 2525, arrProps: ['testString', 'teststring2'] }
+      const olio1Str = JSON.stringify(olio1)
+      const olio3 = JSON.parse(olio1Str)
+      testArr.push(olio1)
+      testArr.push(olio2)
+      // console.log(response.body);
+      // console.log(olio1);
+      // console.log(olio2);
+      // console.log(olio3);
+      expect(testArr).toContainEqual(olio3)
+
+      // console.log(Object.keys(countBeforeTest[0]));
+      // console.log(Object.keys(formattedResponse[0]));
+
+      // console.log(typeof testArr);
+      // console.log(typeof countBeforeTest[0].comments);
+      //   console.dir(countBeforeTest[0].comments)
+      // console.log(typeof formattedResponse[0].comments);
+      //   console.dir(formattedResponse[0].comments)
+      // console.log(Object.getOwnPropertyNames(countBeforeTest[0].comments))
+      console.log(Object.getOwnPropertyNames(formattedResponse[0].comments))
+
+      // expect(JSON.stringify(countBeforeTest[0].comments)).toEqual(formattedResponse[0].comments)
+
+
+      // const stringifiedRes = JSON.stringify(formattedResponse)
+      countBeforeTest.forEach( blog => {
+        expect(formattedResponse).toContainEqual(blog)
+      })
+
+  })
+
+  //  -- ** DEBUG TEST ENDS ** --
 
   describe('GET tests', async () => {
 
@@ -76,7 +140,7 @@ describe('/api/blogs tests', async () => {
 
      })
 
-    //console.log(typeof response.body[0].user);
+    console.log(typeof response.body[0].user);
     //console.log(formattedResponse);
     // console.log(typeof countBeforeTest);
     //console.log(countBeforeTest);
@@ -163,14 +227,16 @@ describe('POST tests', async () => {
      expect(countAfterPost.length).toBe(countBeforePost.length + 1)
 
      //expect(countAfterPost).toContainEqual( formatBlog(response.body) )
+
      expect(countAfterPost).toContainEqual(
        {
          title: "Javascript Fatigue",
          author: "Eric Clemmons",
          url: "https://medium.com/@ericclemmons/javascript-fatigue-48d4011b6fc4",
          likes: 0,
-         id: response.body._id,
-         user: initTestUSers[0].id
+         id: response.body.id,
+         user: initTestUSers[0].id,
+         comments: []
        }
      )
 
@@ -200,7 +266,8 @@ describe('POST tests', async () => {
       title: "ZeroLikes Test",
       author: "Test God",
       url: "127.0.0.1",
-      likes: null
+      likes: null,
+      comments: []
     }
 
     response = await api
@@ -221,8 +288,9 @@ describe('POST tests', async () => {
         author: "Test God",
         url: "127.0.0.1",
         likes: 0,
-        id: response.body._id,
-        user: initTestUSers[0].id
+        id: response.body.id,
+        user: initTestUSers[0].id,
+        comments: []
       })
 
   })
@@ -293,9 +361,10 @@ describe('DELETE tests -- IMPERFECT: not checking blog count at user object', as
       author: "Remove Testuser",
       url: "127.0.0.1",
       likes: 100,
-      user: initTestUSers[0].id
+      user: initTestUSers[0].id,
+      comments:["testComment1, TestComment2"] //Can directly save comments to DB
     })
-    console.log(deletedTestPost);
+    // console.log(deletedTestPost);
     await deletedTestPost.save()
   })
 
@@ -324,7 +393,8 @@ describe('DELETE tests -- IMPERFECT: not checking blog count at user object', as
 
     //Check that deletedTestPost is actually added in first place
     expect(countBeforeDelete).toContainEqual(formatBlog(deletedTestPost))
-
+    // responseGet = await api.get(`/api/blogs/${deletedTestPost._id}`)
+    // console.log(responseGet);
     response = await api
       .delete(`/api/blogs/${deletedTestPost._id}`)
       .set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkRldkRlbGw4NiIsImlkIjoiNWI2ODYyYWVhNDFmZjIyNjk2ZTc1ODRiIiwiaWF0IjoxNTMzNjI4NjA0fQ.nn3zGMPBA-KQiky3koQpmhdiGhw0qO_oVZl0kAtJ81A')
@@ -346,8 +416,8 @@ describe('DELETE tests -- IMPERFECT: not checking blog count at user object', as
     //Login part BEGINS
     //Yeah, kinda ugly right?
     const {isAdult, name, blogs, ...userToTest} = initTestUSers[0]
-    console.log(initTestUSers);
-    console.log(userToTest);
+    // console.log(initTestUSers);
+    // console.log(userToTest);
     //response format {token: xxx, username: xxx, name: xxx}
     tokenResponse = await api
       .post('/api/login')
@@ -375,13 +445,14 @@ describe('DELETE tests -- IMPERFECT: not checking blog count at user object', as
 
 }) //End of describe DELETE tests
 
-describe.skip('UPDATE tests', async () => {
+describe('UPDATE tests', async () => {
 
-  test('UPDATE by id, check for status 200 and compare update', async () => {
+  // NOTE Deprecated test, doesn't work with current put implementation
+  test.skip('UPDATE by id, check for status 200 and compare update', async () => {
 
     const countBeforeUpdate = await getAllBlogs()
 
-    //spread syntax for deep copy (so we don't modify original data)
+    //spread syntax for copy (so we don't modify original data)
     let modifiedPost = { ... countBeforeUpdate[0] }
 
     modifiedPost.likes += 50
@@ -398,6 +469,21 @@ describe.skip('UPDATE tests', async () => {
     expect(countAfterUpdate[0].likes).toBe(countBeforeUpdate[0].likes + 50)
     //Object comparison, not sure if necessary
     expect(countAfterUpdate[0]).toEqual(modifiedPost)
+
+  })
+
+  test('UPDATE by id, check for status 200 and compare update', async () => {
+
+    const countBeforeUpdate = await getAllBlogs()
+
+    const response = await api
+      .put(`/api/blogs/${countBeforeUpdate[0].id}`)
+      // .send(likedPost)
+      .expect(200)
+
+    const countAfterUpdate = await getAllBlogs()
+
+    expect(countAfterUpdate[0].likes).toBe(countBeforeUpdate[0].likes + 1)
 
   })
 

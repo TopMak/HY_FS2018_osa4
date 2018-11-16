@@ -3,6 +3,8 @@
 #Folders
 node_modules
 
+temp.txt
+
 #Files
 .env
 .eslintignore
